@@ -4,7 +4,7 @@ import dash_html_components as html
 import plotly.express as px
 import pandas as pd
 from dash.dependencies import Input, Output
-from dasher.mongohandler import db_dump
+from dasher.mongohandler import db_testdump
 
 
 def init_dashapp(server):
@@ -57,6 +57,7 @@ def reformatdata(data,newdata):
   for row in newdata:
     for key in row:
       if key in data:
+        print(key)
         if isinstance(data[key],list):
           data[key].append(row[key])
   return data
@@ -66,13 +67,14 @@ def init_callbacks(dash_app):
   @dash_app.callback(Output('example-graph-2','figure'),
                 Input('interval-component','n_intervals'))
   def updateGraph(n):
-    dump = db_dump()
+    dump = db_testdump()
     data = {
       'epoch':[],
       'accuracy':[],
-      'loss':[]
+      #'loss':[]
     }
     data = reformatdata(data,dump)
+    print(data)
     fig = px.line(data,x='epoch',y='accuracy')
     #fig.update_traces(mode='lines+markers')
     return fig
