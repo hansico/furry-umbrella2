@@ -3,9 +3,10 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
 import pandas as pd
-from dash.dependencies import Input, Output
-from dasher.mongohandler import db_testdump
-
+from dash.dependencies import Input, Output, State
+from dasher.mongohandler import loadlatest
+import datetime
+import json
 
 def init_dashapp(server):
   external_stylesheets = None
@@ -39,7 +40,10 @@ def init_dashapp(server):
           'textAlign': 'center',
           'color': colors['text']
       }),
-
+      html.P(children=datetime.datetime.min,id='hackylatestepoch'),
+      html.P(children="",id='dummy', style={
+        'display' : 'none'
+      }),
       dcc.Graph(
           id='example-graph-2',
           figure=fig
@@ -47,34 +51,49 @@ def init_dashapp(server):
       dcc.Interval(
         id='interval-component',
         interval=1000, #(ms)
-        n_intervals = 0 
+        n_intervals = 0,
       )
   ])
   init_callbacks(dash_app)
   return dash_app.server
 
-def reformatdata(data,newdata):
-  for row in newdata:
-    for key in row:
+def refo(datastring):
+  rows = datastring.split('£')
+  data = {}
+  for row in rows:
+    q = json.loads(row.replace("'",'"'))
+    for key in q:
       if key in data:
-        print(key)
-        if isinstance(data[key],list):
-          data[key].append(row[key])
+        data[key].append(q[key])
+      else:
+        data[key] = [q[key]]
   return data
 
+def ndjson_to_string(ndjson):
+  return "£".join([str(x) for x in ndjson])
+
 def init_callbacks(dash_app):
-  import random
   @dash_app.callback(Output('example-graph-2','figure'),
-                Input('interval-component','n_intervals'))
-  def updateGraph(n):
-    dump = db_testdump()
-    data = {
-      'epoch':[],
-      'accuracy':[],
-      #'loss':[]
-    }
-    data = reformatdata(data,dump)
-    print(data)
+                #Input('interval-component','n_intervals'))
+                Input('dummy','children'))
+  def updateGraph(datax):
+    data = refo(datax)
     fig = px.line(data,x='epoch',y='accuracy')
-    #fig.update_traces(mode='lines+markers')
     return fig
+  
+  @dash_app.callback(Output('hackylatestepoch','children'),
+                Output('dummy','children'),
+                [Input('interval-component','n_intervals')],
+                [State('hackylatestepoch','children')],
+                [State('dummy','children')])
+  def lateststamp(n,text,whole):
+    laststamp = loadlatest("test","tbob",text)
+    if laststamp:
+      if whole:
+        strin = whole+"£"+ndjson_to_string(laststamp)
+      else:
+        strin = ndjson_to_string(laststamp)
+      return laststamp[-1]['timestamp'], strin
+    else:
+      # prevent update
+      raise dash.exceptions.PreventUpdate

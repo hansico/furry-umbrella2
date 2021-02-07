@@ -8,6 +8,5 @@ def index():
 
 @app.route('/api/post', methods=['POST'])
 def add_to_db():
-  #print(request.json)
-  print(mongohandler.insert_to_db(request.json))
+  mongohandler.save_metrics_to_db(request.json)
   return "Success",200

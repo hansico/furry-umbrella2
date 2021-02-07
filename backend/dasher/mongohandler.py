@@ -1,10 +1,16 @@
 from pymongo import MongoClient
+import datetime 
 
 dbclient = MongoClient()
 db = dbclient.dash_test
 
-def save_metrics_to_db(projectname, modelname, metrics):
+def save_metrics_to_db(dbmetrics):
+  projectname = dbmetrics['projectname']
+  modelname = dbmetrics['modelname']
+  metrics = dbmetrics['metrics']
+  #print(projectname,modelname,metrics)
   coll = db.get_collection(projectname+'.'+modelname) # mongo collection
+  metrics['timestamp'] = str(datetime.datetime.utcnow())
   id = coll.insert_one(metrics).inserted_id
   return id
 
@@ -23,23 +29,14 @@ def save_model_params_to_db(projectname, modelname, params):
   g = coll.insert_one(params).inserted_id
   return g
 
-def push_dummydata():
-  print(save_metrics_to_db("testproject","testcol",{'epoch':1,'accuracy':0.3}))
-  print(save_metrics_to_db("testproject","testcol",{'epoch':2,'accuracy':0.56}))
-  print(save_metrics_to_db("testproject","testcol",{'epoch':3,'accuracy':0.76}))
-  print(save_metrics_to_db("testproject","testcol",{'epoch':4,'accuracy':0.84}))
-  print(save_metrics_to_db("testproject","testcol",{'epoch':5,'accuracy':0.89}))
-
-def db_testdump():
-  dump = []
-  #'Epoch':{'$gte':4}
-  for x in db.testproject.testcol.find({},{'_id':0}):
-    dump.append(x)
-    #print(x)
-  return dump
+def loadlatest(projectname, modelname,last_stamp):
+  coll = db.get_collection(projectname+'.'+modelname)
+  query = coll.find({'timestamp':{'$gt':last_stamp}},{'_id': 0})
+  data = []
+  for x in query:
+    data.append(x)
+  print("QUERY  RETURNED :",len(data))
+  return data
 
 if __name__ == '__main__':
-  #db_dump()
-  #save_model_params_to_db("super","JANK",{'pid':9})
-  #push_dummydata()
   pass
