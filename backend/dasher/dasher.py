@@ -44,9 +44,19 @@ def init_dashapp(server):
       html.P(children="",id='dummy', style={
         'display' : 'none'
       }),
-      dcc.Graph(
-          id='example-graph-2',
-          figure=fig
+      html.Div(
+        style={'display':'flex'},
+        children = [
+          dcc.Graph(
+            id='example-graph-2',
+            figure=fig,
+            style={'flex':1}
+          ),
+          dcc.Graph(
+            id='graph-2',
+            figure=fig,
+            style={'flex':1}
+        )],
       ),
       dcc.Interval(
         id='interval-component',
@@ -73,6 +83,7 @@ def ndjson_to_string(ndjson):
   return "£".join([str(x) for x in ndjson])
 
 def init_callbacks(dash_app):
+
   @dash_app.callback(Output('example-graph-2','figure'),
                 #Input('interval-component','n_intervals'))
                 Input('dummy','children'))
@@ -81,6 +92,14 @@ def init_callbacks(dash_app):
     fig = px.line(data,x='epoch',y='accuracy')
     return fig
   
+  @dash_app.callback(Output('graph-2','figure'),
+                #Input('interval-component','n_intervals'))
+                Input('dummy','children'))
+  def updateGraph(datax):
+    data = refo(datax)
+    fig = px.line(data,x='epoch',y='loss')
+    return fig
+
   @dash_app.callback(Output('hackylatestepoch','children'),
                 Output('dummy','children'),
                 [Input('interval-component','n_intervals')],
