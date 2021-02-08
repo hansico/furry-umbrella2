@@ -1,36 +1,37 @@
 from pymongo import MongoClient
 import datetime 
 
-dbclient = MongoClient()
-db = dbclient.dash_test
+dbclient = MongoClient('mongodb://localhost:27001/')
+
+def get_projects():
+  exclude = set(['admin','local','config'])
+  dbs = set(dbclient.list_database_names())
+  return list(dbs-exclude)
+
+def get_collections(projectname):
+  db = dbclient.get_database(name=projectname)
+  colls = db.list_collection_names()
+  #colls = 
+  return colls 
 
 def save_metrics_to_db(dbmetrics):
   projectname = dbmetrics['projectname']
   modelname = dbmetrics['modelname']
   metrics = dbmetrics['metrics']
-  #print(projectname,modelname,metrics)
-  coll = db.get_collection(projectname+'.'+modelname) # mongo collection
+
+  db = dbclient.get_database(name=projectname)
+  coll = db.get_collection(modelname+'.metrics') # mongo collection
   metrics['timestamp'] = str(datetime.datetime.utcnow())
   id = coll.insert_one(metrics).inserted_id
-  return id
-
-def save_model_params_to_db(projectname, modelname, params):
-  coll = db.get_collection(projectname+'.models') # mongo collection
-  f = coll.find_one({'name':modelname})
-  if f != None:
-    # TODO
-    print("WARNING! Model with that name already exists. Parameters will not be overwritten")
-    return 0
-  if "name" not in params:
-    params["name"] = modelname
-  elif params["name"] != modelname:
-    # TODO
-    print("WARNING! Given modelname does not match the name in params")
-  g = coll.insert_one(params).inserted_id
-  return g
+  print(id)
+  if id:
+    return True
+  else:
+    return False
 
 def loadlatest(projectname, modelname,last_stamp):
-  coll = db.get_collection(projectname+'.'+modelname)
+  db = dbclient.get_database(name=projectname)
+  coll = db.get_collection(modelname+'.metrics')
   query = coll.find({'timestamp':{'$gt':last_stamp}},{'_id': 0})
   data = []
   for x in query:
@@ -39,4 +40,5 @@ def loadlatest(projectname, modelname,last_stamp):
   return data
 
 if __name__ == '__main__':
-  pass
+  print(get_projects())
+  #print(get_collections(''))
