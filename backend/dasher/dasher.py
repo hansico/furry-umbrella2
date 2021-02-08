@@ -187,11 +187,11 @@ def init_callbacks(dash_app):
         timestamps[model] = str(updates[-1]['timestamp'])
         updateflag = True
 
-      if model not in storage:
-        storage[model] = []
-      storage[model].extend(updates)
+        if model not in storage:
+          storage[model] = []
+        storage[model].extend(updates)
 
     if not updateflag:
       raise dash.exceptions.PreventUpdate
-    
+
     return json.dumps(timestamps), json.dumps(storage)
