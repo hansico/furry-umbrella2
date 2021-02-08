@@ -11,8 +11,7 @@ def get_projects():
 def get_collections(projectname):
   db = dbclient.get_database(name=projectname)
   colls = db.list_collection_names()
-  #colls = 
-  return colls 
+  return [coll.split('.')[0] for coll in colls] 
 
 def save_metrics_to_db(dbmetrics):
   projectname = dbmetrics['projectname']
@@ -32,7 +31,7 @@ def save_metrics_to_db(dbmetrics):
 def loadlatest(projectname, modelname,last_stamp):
   db = dbclient.get_database(name=projectname)
   coll = db.get_collection(modelname+'.metrics')
-  query = coll.find({'timestamp':{'$gt':last_stamp}},{'_id': 0})
+  query = coll.find({'timestamp':{'$gt':str(last_stamp)}},{'_id': 0})
   data = []
   for x in query:
     data.append(x)
@@ -41,4 +40,4 @@ def loadlatest(projectname, modelname,last_stamp):
 
 if __name__ == '__main__':
   print(get_projects())
-  #print(get_collections(''))
+  print(get_collections('test'))
